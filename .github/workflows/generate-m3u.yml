@@ -23,7 +23,7 @@ jobs:
     - name: Generate playlist.m3u8
       env:
         YT_PLAYLIST_ID: ${{ secrets.YT_PLAYLIST_ID }}   # e.g. PLxxxx
-        YT_DLP_ARGS: "--geo-bypass --force-ipv4"
+        YT_DLP_ARGS: "--geo-bypass --geo-bypass-country IL --force-ipv4"
       run: python scripts/build_playlist.py
 
     - name: Publish to gh-pages

@@ -6,6 +6,7 @@ import json, subprocess, pathlib, tempfile, os, sys
 import concurrent.futures
 
 PLAYLIST_ID = os.getenv("YT_PLAYLIST_ID") or sys.exit("YT_PLAYLIST_ID not set")
+EXTRA_ARGS = os.getenv("YT_DLP_ARGS", "").split()
 OUT_FILE     = pathlib.Path("public/playlist.m3u8")      # GitHub Pages root
 OUT_FILE.parent.mkdir(parents=True, exist_ok=True)
 
@@ -27,8 +28,9 @@ def fetch_hls(rec):
     """Return (video_id, url_or_None) for a playlist item."""
     vid = rec["id"]
     try:
+        cmd = ["yt-dlp", *EXTRA_ARGS, "-gS", "proto:m3u8", f"https://youtu.be/{vid}"]
         url = subprocess.check_output(
-            ["yt-dlp", "-gS", "proto:m3u8", f"https://youtu.be/{vid}"],
+            cmd,
             text=True,
             stderr=subprocess.DEVNULL      # suppress noisy yt‑dlp output
         ).strip()

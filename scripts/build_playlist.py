@@ -21,24 +21,33 @@ ids = list(rows([
 ]))          # each line is a JSON record
 
 print(f"{len(ids)} items found; resolving HLS URLs …")
+print(f"yt-dlp extra args: {EXTRA_ARGS or '(none)'}")
 tmp = tempfile.NamedTemporaryFile("w", delete=False)
 tmp.write("#EXTM3U\n")
 
 def fetch_hls(rec):
-    """Return (video_id, url_or_None) for a playlist item."""
+    """Return (video_id, url_or_None) for a playlist item with verbose diagnostics."""
     vid = rec["id"]
-    try:
-        cmd = ["yt-dlp", *EXTRA_ARGS, "-gS", "proto:m3u8", f"https://youtu.be/{vid}"]
-        url = subprocess.check_output(
-            cmd,
-            text=True,
-            stderr=subprocess.DEVNULL      # suppress noisy yt‑dlp output
-        ).strip()
+    cmd = ["yt-dlp", *EXTRA_ARGS, "-gS", "proto:m3u8", f"https://youtu.be/{vid}"]
+    print(f"↳ [{vid}] running: {' '.join(cmd)}", file=sys.stderr)
+
+    proc = subprocess.run(
+        cmd,
+        text=True,
+        capture_output=True
+    )
+
+    if proc.returncode == 0:
+        url = proc.stdout.strip()
+        print(f"✓  [{vid}] success (len={len(url)} chars)", file=sys.stderr)
         return vid, url
-    except subprocess.CalledProcessError:
-        # Video unavailable, region‑blocked, etc. – skip but continue
-        print(f"Skipping unavailable video {vid}", file=sys.stderr)
-        return vid, None
+
+    # Failure branch
+    print(f"✗  [{vid}] exit={proc.returncode}", file=sys.stderr)
+    if proc.stderr:
+        lines = "\n      ".join(proc.stderr.strip().splitlines()[:10])
+        print(f"      stderr:\n      {lines}", file=sys.stderr)
+    return vid, None
 
 # Fetch HLS master URLs concurrently (8 workers is a good default for GH runners)
 with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:

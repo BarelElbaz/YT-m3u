@@ -2,8 +2,8 @@ name: build-and-publish-playlist
 
 on:
   workflow_dispatch:
-  schedule:            # UTC; every 30 min
-    - cron:  '11,41 * * * *'
+  # schedule:            # UTC; every 30 min
+  #   - cron:  '11,41 * * * *'
 
 # grant the workflow's GITHUB_TOKEN permission to push to gh-pages
 permissions:
